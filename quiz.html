@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .quiz-box {
+      max-width: 500px;
+      margin: auto;
+      border: 2px solid #444;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .options button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      cursor: pointer;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .score {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍀 Fun Quiz App</h1>
+  <div class="quiz-box" id="quizContainer">
+    Loading...
+  </div>
+  <div class="score" id="scoreBoard"></div>
+
+  <script>
+    const quizContainer = document.getElementById("quizContainer");
+    const scoreBoard = document.getElementById("scoreBoard");
+    let questions = [];
+    let currentQuestion = 0;
+    let score = 0;
+
+    // Function to decode HTML entities (e.g. &quot;)
+    const decode = (str) => decodeURIComponent(str);
+
+    // Fetch questions from API
+    async function fetchQuestions() {
+      const res = await fetch("https://opentdb.com/api.php?amount=10&category=31&difficulty=easy&type=multiple&encode=url3986");
+      const data = await res.json();
+      questions = data.results;
+      showQuestion();
+    }
+
+    // Shuffle answers randomly
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    // Show current question
+    function showQuestion() {
+      if (currentQuestion >= questions.length) {
+        quizContainer.innerHTML = `<h2>✅ Quiz Completed!</h2>`;
+        scoreBoard.innerText = `Your Score: ${score} / ${questions.length}`;
+        return;
+      }
+
+      const q = questions[currentQuestion];
+      const correctAnswer = decode(q.correct_answer);
+      const answers = shuffle([
+        ...q.incorrect_answers.map(decode),
+        correctAnswer,
+      ]);
+
+      quizContainer.innerHTML = `
+        <h2>Q${currentQuestion + 1}: ${decode(q.question)}</h2>
+        <div class="options">
+          ${answers.map(ans => `
+            <button class="answer-btn" 
+              data-answer="${ans}" 
+              data-correct="${correctAnswer}">
+              ${ans}
+            </button>`).join('')}
+        </div>
+      `;
+
+      scoreBoard.innerText = `Score: ${score} / ${questions.length}`;
+    }
+
+    // Handle answer clicks
+    quizContainer.addEventListener("click", (e) => {
+      if (e.target.classList.contains("answer-btn")) {
+        const selected = e.target.getAttribute("data-answer");
+        const correct = e.target.getAttribute("data-correct");
+
+        if (selected === correct) {
+          score++;
+        }
+
+        currentQuestion++;
+        showQuestion();
+      }
+    });
+
+    // Start the quiz
+    fetchQuestions();
+  </script>
+</body>
+</html>
